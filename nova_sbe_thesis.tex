@@ -1,0 +1,248 @@
+% ============================================================
+% Nova SBE Work Project Template
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+% ── Core packages ──────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}            % Times New Roman
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=2.5cm, right=2.5cm
+]{geometry}
+\usepackage{setspace}         % double spacing
+\usepackage{parskip}          % space between paragraphs (no indent)
+\usepackage{microtype}        % better justification
+
+% ── Math & Science ─────────────────────────────────────────
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ── Figures & Tables ───────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{tabularx}
+\usepackage{array}
+
+% ── Page numbering & headers ───────────────────────────────
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+% ── Hyperlinks ─────────────────────────────────────────────
+\usepackage[
+  colorlinks=false,
+  hidelinks
+]{hyperref}
+
+% ── Bibliography (AER / Chicago Author-Date) ───────────────
+\usepackage[
+  backend=biber,
+  style=authoryear,
+  sorting=nyt,
+  maxbibnames=99,
+  dashed=false,
+  doi=true,
+  url=true,
+  isbn=false,
+  eprint=false
+]{biblatex}
+\addbibresource{references.bib}   % <-- put your .bib file here
+
+% ── Caption formatting ─────────────────────────────────────
+% Figures: "Figure 1: Caption text"
+\captionsetup[figure]{
+  labelfont=bf,
+  labelsep=colon,
+  name=Figure,
+  justification=centering
+}
+% Tables: bold title above table (no double-spacing inside tables)
+\captionsetup[table]{
+  labelfont=bf,
+  labelsep=colon,
+  name=Table,
+  position=above,
+  justification=centering
+}
+
+% ── Equation numbering ─────────────────────────────────────
+% Already Arabic by default; reset per section if desired:
+% \numberwithin{equation}{section}
+
+% ── Table spacing override (tables single-spaced) ──────────
+\AtBeginEnvironment{tabular}{\singlespacing}
+\AtBeginEnvironment{tabularx}{\singlespacing}
+
+% ── Page style ─────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\thepage}
+
+% ── Custom fields ──────────────────────────────────────────
+\newcommand{\projecttitle}{[Your Project Title Here]}
+\newcommand{\studentnames}{%
+  Benjamin Iby (70314),
+  Lennart Stenzel (70485),
+  Martin Schmitz (75242),
+  Thomas Teichmann (74817)%
+}
+\newcommand{\programname}{[Your Program Name]}   % e.g. Master in Finance
+\newcommand{\supervisorname}{Assistant Professor Yufei Shen}
+\newcommand{\defensedate}{[Month/Year]}           % e.g. May 2025
+
+% ============================================================
+% DOCUMENT
+% ============================================================
+\begin{document}
+
+% ────────────────────────────────────────────────────────────
+% COVER PAGE  (page 0 — no printed number)
+% ────────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\setcounter{page}{0}
+
+\begin{center}
+  % Nova SBE logo
+  \includegraphics[width=7cm]{nova_logo}\\[3cm]
+
+  {\LARGE\textbf{\projecttitle}}\\[3cm]
+
+  {\large\studentnames}\\[1.5cm]
+
+  {\large\textit{\programname}}\\[2cm]
+
+  \begin{tabular}{rl}
+    \textbf{Supervisor:} & \supervisorname \\[0.5cm]
+    \textbf{Date of Defense:} & \defensedate \\
+  \end{tabular}
+\end{center}
+
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% ABSTRACT PAGE  (page 1)
+% ────────────────────────────────────────────────────────────
+\setcounter{page}{1}
+\doublespacing
+
+\begin{center}
+  \textbf{Abstract}
+\end{center}
+
+% Single paragraph, < 100 words
+[Write your abstract here in a single paragraph of fewer than 100 words. Summarize the main aspects of the project concisely.]
+
+\bigskip
+\noindent\textbf{Keywords:} keyword one; keyword two; keyword three; keyword four
+
+\bigskip
+% Mandatory funding statement
+\noindent\textbf{Funding statement:} [This work received no external funding. / Acknowledge any funding here.]
+
+\bigskip
+% Acknowledgements (if applicable)
+\noindent\textbf{Acknowledgements:} [Include any acknowledgements here, or remove this line if not applicable.]
+
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% OPTIONAL: TABLE OF CONTENTS  (counts toward 25-page limit)
+% ────────────────────────────────────────────────────────────
+% Uncomment the block below to include a table of contents.
+%
+% \tableofcontents
+% \newpage
+
+% ────────────────────────────────────────────────────────────
+% WORK PROJECT  (pages 2 onwards)
+% ────────────────────────────────────────────────────────────
+
+\section{Introduction}
+
+[Begin the body of your work project here from page 2 onwards. The total body text (pages 2–25, inclusive of any optional Table of Contents) must not exceed 25 numbered pages. References may begin on page 26 or earlier and do not count toward the limit.]
+
+% ── Example: Subsection ────────────────────────────────────
+\subsection{Background}
+
+[Subsection text goes here.]
+
+% ── Example: Figure ────────────────────────────────────────
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\textwidth]{example_figure}
+  \caption{Descriptive caption for Figure 1.}
+  \label{fig:example}
+\end{figure}
+
+% Cross-reference example: As shown in Figure~\ref{fig:example} \ldots
+
+% ── Example: Table (single-spaced, smaller font allowed) ───
+\begin{table}[H]
+  \caption{Descriptive Title for Table 1}   % title above table
+  \label{tab:example}
+  \centering
+  \singlespacing                             % tables may not be double-spaced
+  \small                                     % tables may use smaller font
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Variable} & \textbf{Mean} & \textbf{Std. Dev.} & \textbf{Obs.} \\
+    \midrule
+    GDP Growth (\%) & 2.34 & 1.12 & 150 \\
+    Inflation (\%)  & 1.87 & 0.94 & 150 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ── Example: Equation ──────────────────────────────────────
+\begin{equation}
+  Y_{it} = \alpha + \beta X_{it} + \varepsilon_{it}
+  \label{eq:baseline}
+\end{equation}
+
+% Cross-reference example: Equation~\eqref{eq:baseline} specifies \ldots
+
+\section{Literature Review}
+
+[Literature review goes here. Use author-date citations, e.g., \textcite{acemoglu2002} or \parencite{acemoglu2002}.]
+
+\section{Methodology}
+
+[Describe your data and empirical strategy.]
+
+\section{Results}
+
+[Present and discuss your findings.]
+
+\section{Conclusion}
+
+[Summarize your findings and contributions.]
+
+% ────────────────────────────────────────────────────────────
+% REFERENCES  (may start from page 26 or earlier; no page limit)
+% ────────────────────────────────────────────────────────────
+\newpage
+\singlespacing                        % references are single-spaced
+\printbibliography[title={References}]
+
+% ────────────────────────────────────────────────────────────
+% APPENDICES  (after references; no page limit; separate section)
+% ────────────────────────────────────────────────────────────
+\newpage
+\appendix
+\doublespacing
+
+\section{Appendix A: [Title]}
+\label{app:A}
+
+[Supplementary material that is not required for the main understanding of the work but supports it. Appendices do not count toward the 25-page limit and must be uploaded as a separate section.]
+
+\section{Appendix B: [Title]}
+\label{app:B}
+
+[Additional appendix content here.]
+
+\end{document}
