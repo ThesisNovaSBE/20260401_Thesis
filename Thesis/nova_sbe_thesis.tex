@@ -1,0 +1,511 @@
+% ============================================================
+% Nova SBE Work Project Template
+% Master of Science in Business Analytics
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+% ── Core packages ──────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}            % Times New Roman
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=2.5cm, right=2.5cm
+]{geometry}
+\usepackage{setspace}         % line spacing control
+\usepackage{parskip}          % space between paragraphs, no indent
+\usepackage{microtype}        % better justification
+
+% ── Math & Science ─────────────────────────────────────────
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ── Figures & Tables ───────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{tabularx}
+\usepackage{array}
+
+% ── Table of Contents styling ──────────────────────────────
+\usepackage{tocloft}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+% ── Acronyms / List of Abbreviations ──────────────────────
+\usepackage[
+  acronym,
+  nonumberlist,
+  nopostdot,
+  toc
+]{glossaries}
+\makeglossaries
+
+% ── Page numbering & headers ───────────────────────────────
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+% ── Hyperlinks (load late) ─────────────────────────────────
+\usepackage[
+  colorlinks=false,
+  hidelinks
+]{hyperref}
+
+% ── Bibliography (AER / Chicago Author-Date) ───────────────
+\usepackage[
+  backend=biber,
+  style=authoryear,
+  sorting=nyt,
+  maxbibnames=99,
+  dashed=false,
+  doi=true,
+  url=true,
+  isbn=false,
+  eprint=false
+]{biblatex}
+\addbibresource{references.bib}
+
+% ── Caption formatting ─────────────────────────────────────
+\captionsetup[figure]{
+  labelfont=bf,
+  labelsep=colon,
+  name=Figure,
+  justification=centering
+}
+\captionsetup[table]{
+  labelfont=bf,
+  labelsep=colon,
+  name=Table,
+  position=above,
+  justification=centering
+}
+
+% ── Table spacing override (single-spaced inside tables) ───
+\AtBeginEnvironment{tabular}{\singlespacing}
+\AtBeginEnvironment{tabularx}{\singlespacing}
+
+% ── Page style ─────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\thepage}
+
+% ── Custom fields ──────────────────────────────────────────
+\newcommand{\projecttitle}{LLM vs.\ Structured ML for 30-Day Hospital\\[0.3em]Readmission Prediction Using MIMIC-IV}
+\newcommand{\programname}{Master of Science in Business Analytics}
+\newcommand{\supervisorname}{Assistant Professor Yufei Shen}
+\newcommand{\defensedate}{[Month/Year]}
+
+% ── Team members ───────────────────────────────────────────
+\newcommand{\studentnames}{%
+  Benjamin Iby (70314)\\
+  Lennart Stenzel (70485)\\
+  Martin Schmitz (75242)\\
+  Thomas Teichmann (74817)%
+}
+
+% ── Abbreviations ──────────────────────────────────────────
+% Usage in text: \gls{auroc}, \gls{ehr}, etc.
+% First use prints "Full Form (ABBR)"; subsequent uses print "ABBR" only.
+\newacronym{ehr}{EHR}{Electronic Health Record}
+\newacronym{llm}{LLM}{Large Language Model}
+\newacronym{nlp}{NLP}{Natural Language Processing}
+\newacronym{ml}{ML}{Machine Learning}
+\newacronym{auroc}{AUROC}{Area Under the Receiver Operating Characteristic Curve}
+\newacronym{bert}{BERT}{Bidirectional Encoder Representations from Transformers}
+\newacronym{gpt}{GPT}{Generative Pre-trained Transformer}
+\newacronym{icu}{ICU}{Intensive Care Unit}
+\newacronym{los}{LOS}{Length of Stay}
+\newacronym{eda}{EDA}{Exploratory Data Analysis}
+\newacronym{mimic}{MIMIC}{Medical Information Mart for Intensive Care}
+\newacronym{mlm}{MLM}{Masked Language Modeling}
+\newacronym{nsp}{NSP}{Next Sentence Prediction}
+\newacronym{cms}{CMS}{Centers for Medicare \& Medicaid Services}
+\newacronym{rq}{RQ}{Research Question}
+\newacronym{xgb}{XGBoost}{Extreme Gradient Boosting}
+\newacronym{rlhf}{RLHF}{Reinforcement Learning from Human Feedback}
+% Add further abbreviations below following the same pattern
+
+% ============================================================
+% DOCUMENT
+% ============================================================
+\begin{document}
+
+% ────────────────────────────────────────────────────────────
+% COVER PAGE  (page 0 — no printed number)
+% ────────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\setcounter{page}{0}
+
+\begin{center}
+  \includegraphics[width=7cm]{nova_logo}\\[2.5cm]
+
+  {\LARGE\textbf{\projecttitle}}\\[2.5cm]
+
+  {\large\studentnames}\\[1.5cm]
+
+  {\large\textit{\programname}}\\[2cm]
+
+  \begin{tabular}{rl}
+    \textbf{Supervisor:}      & \supervisorname \\[0.5cm]
+    \textbf{Date of Defense:} & \defensedate    \\
+  \end{tabular}
+\end{center}
+
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% ABSTRACT PAGE  (page 1 — does NOT count toward 25-page limit)
+% ────────────────────────────────────────────────────────────
+\setcounter{page}{1}
+\thispagestyle{fancy}
+\doublespacing
+
+\begin{center}
+  \textbf{Abstract}
+\end{center}
+
+% Single paragraph, fewer than 100 words.
+% Cover: (1) clinical problem, (2) the gap, (3) your approach, (4) main finding.
+[Write your abstract here. Summarise the clinical and economic burden of 30-day hospital
+readmissions, the gap left by structured \gls{ml} approaches that consistently flag clinical
+notes as underutilised, your progressive modelling strategy comparing \gls{xgb} on structured
+\gls{ehr} data against \gls{llm}-augmented discharge note representations using \gls{mimic}-IV,
+and your main finding. Keep to fewer than 100 words.]
+
+\bigskip
+\noindent\textbf{Keywords:} hospital readmission; clinical \gls{nlp}; large language models;
+MIMIC-IV; XGBoost; electronic health records; ClinicalBERT
+
+\bigskip
+\noindent\textbf{Funding statement:} This work received no external funding.
+
+\bigskip
+\noindent\textbf{Acknowledgements:} [Include any acknowledgements here, or remove this
+line if not applicable.]
+
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% TABLE OF CONTENTS  (counts toward 25-page limit)
+% ────────────────────────────────────────────────────────────
+\singlespacing
+\tableofcontents
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% LIST OF FIGURES  (counts toward 25-page limit)
+% ────────────────────────────────────────────────────────────
+\listoffigures
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% LIST OF TABLES  (counts toward 25-page limit)
+% ────────────────────────────────────────────────────────────
+\listoftables
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% LIST OF ABBREVIATIONS  (counts toward 25-page limit)
+% ────────────────────────────────────────────────────────────
+\printglossary[
+  type=\acronymtype,
+  title={List of Abbreviations},
+  toctitle={List of Abbreviations}
+]
+\newpage
+
+% ────────────────────────────────────────────────────────────
+% WORK PROJECT  (pages 2–25)
+% ────────────────────────────────────────────────────────────
+\doublespacing
+
+% ============================================================
+\section{Introduction}
+% Target: ~1–2 pages
+% ============================================================
+% Suggested flow:
+% 1. Open with the clinical and economic burden of 30-day readmissions.
+% 2. Introduce structured ML as the current norm (XGBoost, LACE score, etc.).
+% 3. State the documented gap: clinical notes consistently flagged as underutilised.
+% 4. Introduce your approach and what makes it novel.
+% 5. State your research question(s).
+% 6. Brief outline of the paper.
+
+[Introduction text goes here.]
+
+% ============================================================
+\section{Literature Review}
+% Target: ~15–20 pages (roughly 35% clinical domain, 65% NLP/LLM)
+% ============================================================
+
+\subsection{Hospital Readmission Prediction}
+
+\subsubsection{Clinical and Economic Context}
+% Cover: definition of 30-day readmission as a quality measure,
+% \gls{cms} penalties, prevalence and cost burden in US/EU healthcare systems.
+
+[Text goes here.]
+
+\subsubsection{Structured Machine Learning Approaches}
+% Cover: LACE index, logistic regression, gradient boosting (\gls{xgb}),
+% key feature sets (demographics, labs, vitals, comorbidities, \gls{los}, \gls{icu}),
+% landmark studies on MIMIC-III / MIMIC-IV.
+% Key citations: \parencite{gupta2022}, \parencite{huang2020clinicalbert}
+
+[Text goes here.]
+
+\subsubsection{The Underutilisation of Clinical Notes}
+% Cover: why prior structured work consistently flags notes as future work,
+% what predictive signal is lost by ignoring free text,
+% and why this gap directly motivates your study.
+
+[Text goes here.]
+
+\subsection{Clinical NLP and Large Language Models}
+
+\subsubsection{Evolution of NLP in Healthcare}
+% Cover: rule-based to statistical to neural approaches,
+% early clinical \gls{nlp} systems (MetaMap, cTAKES), shift to deep learning.
+
+[Text goes here.]
+
+\subsubsection{BERT and ClinicalBERT}
+% Cover: \gls{bert} architecture, pre-training objectives (\gls{mlm}, \gls{nsp}),
+% domain adaptation for clinical text, ClinicalBERT \parencite{alsentzer2019},
+% BioBERT, performance on clinical NLP benchmarks.
+
+[Text goes here.]
+
+\subsubsection{Modern Large Language Models}
+% Cover: \gls{gpt}-family, LLaMA-family, instruction tuning, \gls{rlhf},
+% zero-shot / few-shot clinical capabilities.
+% Discuss trade-offs: performance vs.\ cost vs.\ data privacy constraints.
+
+[Text goes here.]
+
+\subsubsection{LLMs for Clinical Prediction Tasks}
+% Cover: how \gls{llm}s are applied to clinical outcome prediction,
+% prompting vs.\ fine-tuning vs.\ embedding extraction,
+% known limitations: hallucination, calibration, HIPAA considerations.
+
+[Text goes here.]
+
+\subsection{The MIMIC Dataset Family}
+% Cover: MIMIC-III vs.\ MIMIC-IV differences, MIMIC-IV-Note,
+% PhysioNet credentialing process, prior studies using it.
+% Key citations: \parencite{johnson2023mimic}, \parencite{johnson2023note},
+%               \parencite{gupta2022}
+
+[Text goes here.]
+
+\subsection{Research Gap and Contribution}
+% Synthesise: structured approaches work well but leave notes on the table.
+% Clinical \gls{nlp} has matured but is rarely integrated end-to-end for readmission.
+% State clearly what your study adds and why it matters.
+
+[Text goes here.]
+
+% ============================================================
+\section{Data and Methodology}
+% Target: ~15–20 pages
+% ============================================================
+
+\subsection{Research Objectives and Questions}
+% State your \gls{rq}(s) explicitly. Example:
+%
+% \textbf{\gls{rq}1:} Does incorporating clinical notes via \gls{llm}-based
+% representations improve 30-day unplanned readmission prediction beyond a
+% structured \gls{ml} baseline trained on \gls{ehr} data alone?
+%
+% \textbf{\gls{rq}2:} [Optional — e.g. which note types / patient subgroups /
+% LLM strategies drive the most predictive gain?]
+
+[Text goes here.]
+
+\subsection{Dataset: MIMIC-IV and MIMIC-IV-Note}
+% Cover: dataset overview, ethics and access (PhysioNet credentialing,
+% de-identification), relevant tables used (admissions, patients, labevents,
+% chartevents, discharge notes), time period covered.
+% Key citations: \parencite{johnson2023mimic}, \parencite{johnson2023note}
+
+[Text goes here.]
+
+\subsubsection{Cohort Definition and Label Engineering}
+% Cover: inclusion / exclusion criteria, definition of the target label
+% (unplanned 30-day readmission), handling of planned readmissions,
+% patient-level vs.\ admission-level splits, class imbalance.
+
+[Text goes here.]
+
+\subsubsection{Exploratory Data Analysis}
+% Cover: descriptive statistics of the cohort, missingness patterns,
+% readmission rate distribution, note lengths, temporal coverage.
+
+[Text goes here.]
+
+\subsection{Structured ML Baseline}
+% Cover: feature engineering from structured \gls{ehr} tables
+% (demographics, labs, vitals, comorbidities, \gls{los}, \gls{icu} flags),
+% \gls{xgb} architecture and hyperparameter tuning,
+% missing-value handling, feature importance analysis.
+
+[Text goes here.]
+
+\subsection{LLM-Based Note Modelling}
+% NOTE: depth of this section depends on your method choice (TBD).
+
+\subsubsection{Clinical Note Preprocessing}
+% Cover: note selection (discharge summaries, physician notes),
+% de-identification checks, tokenisation, truncation strategy for long notes.
+
+[Text goes here.]
+
+\subsubsection{Representation Strategy}
+% Cover your chosen approach and justify the choice:
+% Option A — Embedding extraction (ClinicalBERT / domain-adapted model)
+% Option B — Fine-tuning on the readmission classification task
+% Option C — Prompting / zero-shot with a GPT-style \gls{llm}
+% Discuss compute and data privacy trade-offs across options.
+
+[Text goes here.]
+
+\subsection{Combined Model: Structured Features + Note Representations}
+% Cover: fusion strategy (early vs.\ late fusion),
+% final classifier architecture and justification.
+
+[Text goes here.]
+
+\subsection{Evaluation Framework}
+% Cover: shared patient-level train / validation / test splits
+% (no patient appears in multiple splits), primary metric (\gls{auroc}),
+% secondary metrics (F1, precision, recall, Brier score),
+% statistical significance testing, calibration plots.
+
+[Text goes here.]
+
+% ============================================================
+\section{Results}
+% Target: ~10–15 pages
+% ============================================================
+
+\subsection{Structured ML Baseline Performance}
+% Report \gls{xgb} results on the held-out test set.
+% Include: \gls{auroc}, F1, calibration curve, feature importance plot.
+
+[Text goes here.]
+
+\subsection{LLM-Based Model Performance}
+% Report note-only model results.
+% Compare against the baseline on the same held-out set.
+
+[Text goes here.]
+
+\subsection{Combined Model Performance}
+% Report structured + note fusion model results.
+% This is your headline result.
+
+[Text goes here.]
+
+\subsection{Comparative Analysis}
+% Side-by-side comparison across all three models.
+% Statistical significance of performance differences.
+% Subgroup or ablation analysis if applicable (\gls{rq}2).
+
+\begin{table}[H]
+  \caption{Model Performance Comparison on 30-Day Readmission Prediction}
+  \label{tab:results_comparison}
+  \centering
+  \singlespacing\small
+  \begin{tabularx}{\textwidth}{X c c c c}
+    \toprule
+    \textbf{Model} & \textbf{\gls{auroc}} & \textbf{F1} & \textbf{Precision} & \textbf{Recall} \\
+    \midrule
+    Structured \gls{ml} Baseline (\gls{xgb}) & -- & -- & -- & -- \\
+    \gls{llm} Note Model                      & -- & -- & -- & -- \\
+    Combined Model                            & -- & -- & -- & -- \\
+    \bottomrule
+  \end{tabularx}
+  \\[0.5em]
+  \footnotesize\textit{Note: Values to be filled upon completion of experiments.}
+\end{table}
+
+[Text goes here.]
+
+% ============================================================
+\section{Discussion}
+% Target: ~5–8 pages
+% ============================================================
+
+\subsection{Do LLMs Close the Gap?}
+% Directly answer \gls{rq}1. Interpret the magnitude of improvement (or lack thereof).
+% Situate findings relative to prior work (ClinicalBERT, etc.).
+
+[Text goes here.]
+
+\subsection{Clinical and Practical Implications}
+% Cover: what this means for hospitals considering early readmission tools,
+% model interpretability, clinician trust, deployment trade-offs.
+
+[Text goes here.]
+
+\subsection{Limitations}
+% Cover: single-centre data (MIMIC = BIDMC), de-identification artefacts,
+% compute constraints on \gls{llm} choice, class imbalance handling,
+% generalisability to non-US / non-\gls{icu} settings.
+
+[Text goes here.]
+
+\subsection{Future Work}
+% Cover: multi-centre validation, real-time inference pipelines,
+% privacy-preserving fine-tuning (federated learning, differential privacy),
+% extension to other clinical outcomes beyond readmission.
+
+[Text goes here.]
+
+% ============================================================
+\section{Conclusion}
+% Target: ~1–2 pages
+% ============================================================
+% Summarise: (1) the problem and gap, (2) your approach,
+% (3) your main finding, (4) the takeaway for the field.
+% No new information — echo the introduction, not the results section.
+
+[Conclusion text goes here.]
+
+% ────────────────────────────────────────────────────────────
+% REFERENCES  (may start from page 26 or earlier; no page limit)
+% ────────────────────────────────────────────────────────────
+\newpage
+\singlespacing
+\printbibliography[title={References}]
+
+% ────────────────────────────────────────────────────────────
+% APPENDICES  (after references; no page limit)
+% ────────────────────────────────────────────────────────────
+\newpage
+\appendix
+\doublespacing
+
+\section{Data Processing Pipeline}
+\label{app:pipeline}
+% Cohort construction steps, SQL queries, or data cleaning decisions
+% too detailed for the main text but important for reproducibility.
+
+[Appendix A text goes here.]
+
+\section{Model Hyperparameters}
+\label{app:hyperparams}
+% Full hyperparameter grids, tuning procedure, and final selected
+% values for all models.
+
+[Appendix B text goes here.]
+
+\section{Additional Results and Robustness Checks}
+\label{app:robustness}
+% Additional tables, subgroup analyses, ablation results, or calibration
+% plots that support the main results section.
+
+[Appendix C text goes here.]
+
+\end{document}
