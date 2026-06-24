@@ -1,0 +1,64 @@
+# ── Data paths ──
+# Set these to your local MIMIC-IV directories, or leave empty to use synthetic data.
+# These can also be overridden via the .env file (environment variables take precedence).
+data:
+  mimic_iv_dir: ""          # e.g. /home/user/data/mimic-iv/2.2
+  mimic_iv_note_dir: ""     # e.g. /home/user/data/mimic-iv-note/2.2
+  synthetic_n_patients: 2000
+  synthetic_seed: 42
+
+# ── Cohort definition ──
+cohort:
+  readmission_window_days: 30
+  min_age: 18
+  exclude_in_hospital_death: true
+  exclude_elective: true
+
+# ── Feature engineering ──
+features:
+  lab_items:
+    - glucose
+    - creatinine
+    - hemoglobin
+    - white_blood_cells
+    - platelets
+    - sodium
+    - potassium
+    - bicarbonate
+  vital_items:
+    - heart_rate
+    - systolic_bp
+    - diastolic_bp
+    - temperature
+    - respiratory_rate
+    - spo2
+
+# ── Stage 1: Classical ML ──
+stage1:
+  models:
+    - logistic_regression
+    - xgboost
+    - histgradientboosting
+  target_recall: 0.85
+  test_size: 0.2
+  cv_folds: 5
+  random_state: 42
+
+# ── Stage 2: Clinical encoder ──
+stage2:
+  model_name: "emilyalsentzer/Bio_ClinicalBERT"
+  max_seq_length: 512
+  batch_size: 16
+  epochs: 3
+  learning_rate: 2.0e-5
+
+# ── Stage 3: Explanation (optional) ──
+stage3:
+  enabled: false
+  ollama_model: "gemma3"
+  temperature: 0.3
+
+# ── Output ──
+output:
+  model_dir: "models"
+  log_dir: "logs"

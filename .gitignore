@@ -1,0 +1,53 @@
+# ── Data (MIMIC-IV must NEVER be committed) ──
+data/
+!data/.gitkeep
+!data/README.md
+*.csv
+*.csv.gz
+*.parquet
+*.feather
+*.h5
+*.hdf5
+
+# ── Model artifacts ──
+models/*.pkl
+models/*.joblib
+models/*.pt
+models/*.bin
+*.onnx
+
+# ── Environment / secrets ──
+.env
+.env.local
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# ── Jupyter ──
+.ipynb_checkpoints/
+
+# ── Logs ──
+logs/
+*.log
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+
+# ── IDE ──
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Local MIMIC paths (safety net) ──
+mimic-iv/
+mimic-iv-note/
+physionet.org/
