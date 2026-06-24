@@ -1,8 +1,10 @@
 # Core
 numpy>=1.24,<2.0
 pandas>=2.0
-scikit-learn>=1.3
+scikit-learn>=1.4   # HistGradientBoostingClassifier(class_weight=...) needs >=1.4
 xgboost>=2.0
+optuna>=3.4
+joblib>=1.3
 pyyaml>=6.0
 python-dotenv>=1.0
 

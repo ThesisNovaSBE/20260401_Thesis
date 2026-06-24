@@ -15,11 +15,14 @@ Predict unplanned hospital readmission as accurately as possible using a two-sta
 
 ## Pipeline Stages
 
-### Stage 1 — Classical ML (Structured Data)
+### Stage 1 — Classical ML (Structured Data) — IMPLEMENTED
 
-- Models: Logistic Regression, XGBoost, HistGradientBoosting
-- Input: Structured EHR features from MIMIC-IV
-- Objective: **High recall** — cast a wide net, accept more false positives
+- Models: Logistic Regression, XGBoost, HistGradientBoosting (selectable via `config.yaml`)
+- Input: Structured EHR features from MIMIC-IV (demographics, index-admission traits, prior utilisation, Charlson comorbidity index, last + aggregate labs, last vitals)
+- Objective: **High recall** — primary metric AUPRC; threshold chosen for recall ≥ target (default 0.85)
+- Imbalance: `scale_pos_weight` / `class_weight="balanced"` + threshold tuning
+- Split: patient-level (`subject_id`) grouped + stratified; tuning via Optuna (CV AUPRC); see `docs/MODELING_PLAN.md`
+- Plan & approach: **`docs/MODELING_PLAN.md`**
 
 ### Stage 2 — Clinical Encoder (Notes)
 
@@ -44,6 +47,17 @@ Predict unplanned hospital readmission as accurately as possible using a two-sta
 - 1 person: literature review
 - 2 people: core coding (data pipeline + models)
 - 1 person (joining later): evaluation, explanation layer, integration
+
+## Running Stage 1 (works without MIMIC, on synthetic data)
+
+```bash
+python setup_demo.py                 # generate synthetic data + build features
+python -m src.model.tune             # Optuna search (writes best params)
+python -m src.model.train            # train final model + pick threshold
+python -m src.model.evaluate         # AUPRC/AUROC + operating point + fairness
+```
+
+`config.yaml` controls the model (`stage1.model`), run mode (`run.mode: quick|full`), recall target, and paths. Add `--mode full` / `--model xgboost` to override on the CLI.
 
 ## Design Principles
 

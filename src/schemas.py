@@ -2,6 +2,9 @@
 
 These schemas define the contract between data stages. Both the real MIMIC-IV
 loader and the synthetic generator must produce DataFrames matching these schemas.
+
+Raw tables mirror the MIMIC-IV column names so that `src/data/features.py` can run
+unchanged on real data and on synthetic data.
 """
 
 PATIENTS_COLS = {
@@ -16,61 +19,38 @@ ADMISSIONS_COLS = {
     "admittime": "datetime64[ns]",
     "dischtime": "datetime64[ns]",
     "admission_type": "object",
+    "admission_location": "object",
+    "discharge_location": "object",
     "insurance": "object",
     "marital_status": "object",
     "race": "object",
+    "edregtime": "datetime64[ns]",   # nullable; presence indicates an ED visit
     "hospital_expire_flag": "int64",
+    "readmission_30d": "int64",       # label (set by cohort.py / synthetic generator)
 }
 
-LABS_COLS = {
+# Long-format measurements (mirrors MIMIC-IV labevents / chartevents after itemid mapping)
+# One row per measurement.
+MEASUREMENTS_COLS = {
     "subject_id": "int64",
     "hadm_id": "int64",
-    "glucose": "float64",
-    "creatinine": "float64",
-    "hemoglobin": "float64",
-    "white_blood_cells": "float64",
-    "platelets": "float64",
-    "sodium": "float64",
-    "potassium": "float64",
-    "bicarbonate": "float64",
+    "item": "object",        # canonical name, e.g. "glucose", "heart_rate"
+    "valuenum": "float64",
+    "charttime": "datetime64[ns]",
 }
 
-VITALS_COLS = {
+# Diagnoses (mirrors MIMIC-IV diagnoses_icd)
+DIAGNOSES_COLS = {
     "subject_id": "int64",
     "hadm_id": "int64",
-    "heart_rate": "float64",
-    "systolic_bp": "float64",
-    "diastolic_bp": "float64",
-    "temperature": "float64",
-    "respiratory_rate": "float64",
-    "spo2": "float64",
+    "seq_num": "int64",
+    "icd_code": "object",
+    "icd_version": "int64",   # 9 or 10
 }
 
-# Final feature matrix for Stage 1
-FEATURE_MATRIX_COLS = {
-    "subject_id": "int64",
-    "hadm_id": "int64",
-    "age": "int64",
-    "gender_M": "int64",
-    "los_days": "float64",
-    "n_prior_admissions": "int64",
-    "admission_type_emergency": "int64",
-    # Labs (last value during stay)
-    "glucose": "float64",
-    "creatinine": "float64",
-    "hemoglobin": "float64",
-    "white_blood_cells": "float64",
-    "platelets": "float64",
-    "sodium": "float64",
-    "potassium": "float64",
-    "bicarbonate": "float64",
-    # Vitals (last value during stay)
-    "heart_rate": "float64",
-    "systolic_bp": "float64",
-    "diastolic_bp": "float64",
-    "temperature": "float64",
-    "respiratory_rate": "float64",
-    "spo2": "float64",
-    # Target
-    "readmission_30d": "int64",
-}
+# Identifier columns carried through the feature matrix but never used as model inputs.
+ID_COLS = ["subject_id", "hadm_id"]
+TARGET_COL = "readmission_30d"
+
+# Columns kept only for fairness/subgroup analysis (not model inputs).
+SUBGROUP_COLS = ["gender", "age_band"]

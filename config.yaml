@@ -7,6 +7,21 @@ data:
   synthetic_n_patients: 2000
   synthetic_seed: 42
 
+# ── Run mode ──
+# quick = small/fast (minutes) for development; full = the real run.
+# Switch with `--mode quick|full` on the CLI, or change `mode` here.
+run:
+  mode: quick
+  random_state: 42
+  quick:
+    n_rows: 4000            # subsample feature matrix to this many rows (0 = use all)
+    optuna_trials: 15
+    cv_folds: 3
+  full:
+    n_rows: 0
+    optuna_trials: 150
+    cv_folds: 5
+
 # ── Cohort definition ──
 cohort:
   readmission_window_days: 30
@@ -32,17 +47,23 @@ features:
     - temperature
     - respiratory_rate
     - spo2
+  lab_aggregates: [last, mean, min, max]   # aggregates computed per admission
+  comorbidity_scheme: charlson             # charlson | elixhauser | both
 
 # ── Stage 1: Classical ML ──
 stage1:
-  models:
+  # Which model to train / tune. One of: logistic_regression | xgboost | histgradientboosting
+  model: xgboost
+  models:                                  # the full comparison set (for reference)
     - logistic_regression
     - xgboost
     - histgradientboosting
-  target_recall: 0.85
+  target_recall: 0.85                      # operating point: lowest threshold with recall >= this
+  recall_report_points: [0.80, 0.85, 0.90] # also report precision/specificity at these recalls
   test_size: 0.2
-  cv_folds: 5
-  random_state: 42
+  use_smote: false                         # optional ablation; if true, applied INSIDE CV folds only
+  early_stopping_rounds: 50                # XGBoost early stopping (n_estimators not tuned)
+  n_estimators_cap: 2000                   # XGBoost upper bound used with early stopping
 
 # ── Stage 2: Clinical encoder ──
 stage2:
@@ -62,3 +83,4 @@ stage3:
 output:
   model_dir: "models"
   log_dir: "logs"
+  processed_dir: "data/processed"
