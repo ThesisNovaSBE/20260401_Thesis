@@ -1,7 +1,8 @@
 # ── Data (MIMIC-IV must NEVER be committed) ──
-data/
-!data/.gitkeep
-!data/README.md
+# Leading slash anchors to repo root — does NOT affect src/data/
+/data/
+!/data/.gitkeep
+!/data/README.md
 *.csv
 *.csv.gz
 *.parquet

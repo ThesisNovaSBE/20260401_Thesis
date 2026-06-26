@@ -3,7 +3,8 @@
 ## Model Details
 
 - **Stage 1:** Classical ML classifiers (Logistic Regression, XGBoost, HistGradientBoosting) on structured EHR features
-- **Stage 2:** Fine-tuned Bio_ClinicalBERT on clinical notes
+- **Stage 2:** Fine-tuned Clinical-Longformer (`yikuan8/Clinical-Longformer`) on discharge notes — 4096-token context, trained on MIMIC-III
+- **Stage 3 (optional):** Local generative explanation via Ollama (`phi4-mini`)
 - **Developed by:** Nova SBE thesis team (M.Sc. Business Analytics)
 - **Model type:** Two-stage triage-and-verify classification pipeline
 - **Language:** English (clinical notes)
