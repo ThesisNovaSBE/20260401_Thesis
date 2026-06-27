@@ -63,10 +63,11 @@ def load_notes(cfg: dict, hadm_ids: set | None = None) -> pd.DataFrame:
         if hadm_ids is not None:
             chunk = chunk[chunk["hadm_id"].isin(hadm_ids)]
 
-        # Keep only discharge summaries if the note_type column exists
+        # Keep only discharge summaries if the note_type column exists.
+        # MIMIC-IV-Note uses 'DS' as the note_type code for discharge summaries.
         if "note_type" in chunk.columns:
             chunk = chunk[
-                chunk["note_type"].str.lower().str.contains("discharge", na=False)
+                chunk["note_type"].str.upper().isin({"DS", "DISCHARGE", "DISCHARGE SUMMARY"})
             ]
 
         if len(chunk):
