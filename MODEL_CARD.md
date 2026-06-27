@@ -17,7 +17,7 @@
 
 ## Training Data
 
-- MIMIC-IV v2.2 (structured tables) — credentialed access via PhysioNet
+- MIMIC-IV v3.1 (structured tables) — credentialed access via PhysioNet
 - MIMIC-IV-Note (discharge summaries) — credentialed access via PhysioNet
 - Population: Adult patients (age >= 18), excluding in-hospital deaths and elective readmissions
 
