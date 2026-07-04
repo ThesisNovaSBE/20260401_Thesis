@@ -28,12 +28,13 @@ from src.schemas import ID_COLS, TARGET_COL
 from src.stage3.explain import generate_explanations_batch
 
 
-def run_stage3(cfg: dict, results_path: Path | None = None) -> pd.DataFrame:
+def run_stage3(cfg: dict, results_path: Path | None = None, limit: int | None = None) -> pd.DataFrame:
     """Generate explanations for Stage 2 confirmed patients.
 
     Args:
         cfg: loaded config dict.
         results_path: path to Stage 2 results CSV. Defaults to models/stage2_results.csv.
+        limit: if set, only generate explanations for this many randomly sampled patients.
 
     Returns:
         DataFrame of confirmed patients with an added 'explanation' column.
@@ -51,13 +52,18 @@ def run_stage3(cfg: dict, results_path: Path | None = None) -> pd.DataFrame:
     confirmed_df = stage2_df[stage2_df["stage2_confirmed"] == 1].reset_index(drop=True)
     print(f"[stage3] {len(confirmed_df):,} confirmed high-risk patients to explain.")
 
+    if limit and len(confirmed_df) > limit:
+        confirmed_df = confirmed_df.sample(n=limit, random_state=42).reset_index(drop=True)
+        print(f"[stage3] Sampled {limit} patients for explanation generation.")
+
     if len(confirmed_df) == 0:
         print("[stage3] No confirmed patients — nothing to do.")
         return confirmed_df
 
     # ── Merge feature matrix for richer prompt context ──
-    mode = cfg["run"]["mode"]
-    matrix = load_feature_matrix(cfg, mode)
+    # Always load full matrix so all hadm_ids from Stage 2 (trained in full mode)
+    # get feature context; quick mode would miss most rows since they're subsampled.
+    matrix = load_feature_matrix(cfg, "full")
     exclude = {TARGET_COL, "gender", "age_band"}
     feat_cols = [c for c in matrix.columns if c not in exclude]
     confirmed_df = confirmed_df.merge(matrix[feat_cols], on="hadm_id", how="left")

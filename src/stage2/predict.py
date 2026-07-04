@@ -33,6 +33,7 @@ from src.schemas import TARGET_COL
 def predict_stage2(
     cfg: dict,
     stage2_threshold: float | None = None,
+    artifact: dict | None = None,
 ) -> pd.DataFrame:
     """Run Stage 2 inference on patients flagged by Stage 1.
 
@@ -40,6 +41,10 @@ def predict_stage2(
         cfg: loaded config dict.
         stage2_threshold: probability cutoff for Stage 2 confirmation.
                           Defaults to cfg["stage2"]["threshold"].
+        artifact: pre-loaded Stage 1 artifact dict. If None, loaded from disk.
+                  Pass a pre-loaded artifact when torch is already imported
+                  (joblib.load of an XGBoost model crashes on macOS if called
+                  after torch is in memory).
 
     Returns:
         DataFrame with per-admission Stage 1 + Stage 2 scores and confirmation flag.
@@ -52,14 +57,18 @@ def predict_stage2(
             "Run `python -m src.stage2.train` first."
         )
 
-    stage2_threshold = stage2_threshold or cfg["stage2"].get("threshold", 0.5)
-    max_length = cfg["stage2"]["max_seq_length"]
+    if stage2_threshold is None:
+        stage2_threshold = cfg["stage2"].get("threshold", 0.5)
     batch_size = cfg["stage2"]["batch_size"] * 2
-    mode = cfg["run"]["mode"]
 
     # ── Load Stage 1 predictions on the test set ──
     stage1_name = cfg["stage1"]["model"]
-    artifact = joblib.load(model_dir / f"stage1_{stage1_name}.joblib")
+    if artifact is None:
+        artifact = joblib.load(model_dir / f"stage1_{stage1_name}.joblib")
+    # Use the mode the Stage 1 model was trained on to reconstruct the exact
+    # same feature matrix (and thus valid train_idx / test_idx positions).
+    mode = artifact["mode"]
+    max_length = cfg["stage2"]["max_seq_length"]
     matrix = load_feature_matrix(cfg, mode)
     X, y, groups, subgroups, _ = split_xy(matrix)
 

@@ -54,6 +54,9 @@ def main():
     parser = argparse.ArgumentParser(description="Run Stage 3 end-to-end")
     parser.add_argument("--input", type=Path, default=None,
                         help="Path to Stage 2 results CSV (default: models/stage2_results.csv)")
+    parser.add_argument("--limit", type=int, default=None,
+                        help="Only generate explanations for N confirmed patients (random sample). "
+                             "Useful for demos and thesis examples.")
     args = parser.parse_args()
 
     cfg = load_config()
@@ -76,10 +79,14 @@ def main():
     import pandas as pd
     stage2_df = pd.read_csv(results_path)
     n_confirmed = int((stage2_df["stage2_confirmed"] == 1).sum())
-    print(f"[setup_stage3] {n_confirmed:,} confirmed high-risk patients to explain.\n")
+    print(f"[setup_stage3] {n_confirmed:,} confirmed high-risk patients to explain.")
+    if args.limit and args.limit < n_confirmed:
+        print(f"[setup_stage3] --limit {args.limit}: generating explanations for {args.limit} sampled patients.\n")
+    else:
+        print()
 
     from src.stage3.run import run_stage3
-    out_df = run_stage3(cfg, results_path=results_path)
+    out_df = run_stage3(cfg, results_path=results_path, limit=args.limit)
 
     # Print a few examples
     confirmed = out_df[out_df["stage2_confirmed"] == 1].reset_index(drop=True)

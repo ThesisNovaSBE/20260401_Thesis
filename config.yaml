@@ -74,10 +74,15 @@ stage1:
 #   - Trained on MIMIC-III clinical notes — same domain as this project
 stage2:
   model_name: "yikuan8/Clinical-Longformer"
-  max_seq_length: 512           # use 512 for quick/dev runs; bump to 1024 for full mode
+  max_seq_length: 512           # token budget per note (Longformer supports up to 4096)
+                                # 512 is the practical limit on CPU; bump to 1024+ if using GPU
+  max_train_notes: 15000        # cap training notes (stratified by label)
+                                # full 251k notes × periodic eval = weeks on CPU; 15k ≈ 9 hours train
+  max_eval_notes: 3000          # cap eval set used for checkpoint selection during training
+                                # 62k test notes × 5 epochs = days of eval alone; 3k ≈ 30 min/epoch
   batch_size: 2                 # small batch + gradient accumulation for Apple Silicon memory
   gradient_accumulation_steps: 8
-  epochs: 3
+  epochs: 5
   learning_rate: 2.0e-5
   threshold: 0.5                # Stage 2 confirmation threshold (tune after training)
 

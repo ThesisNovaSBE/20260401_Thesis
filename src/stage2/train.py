@@ -22,6 +22,7 @@ import json
 import joblib
 import numpy as np
 import torch
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import average_precision_score, roc_auc_score
 from transformers import (
     AutoTokenizer,
@@ -56,12 +57,19 @@ def _detect_device() -> str:
     return "cpu"
 
 
-def train_stage2(cfg: dict) -> None:
-    mode = cfg["run"]["mode"]
+def train_stage2(cfg: dict, artifact: dict | None = None) -> None:
+    """Fine-tune Clinical-Longformer for Stage 2.
+
+    Args:
+        cfg: loaded config dict.
+        artifact: pre-loaded Stage 1 artifact dict. If None, it is loaded from
+                  disk here. Pass a pre-loaded artifact when calling from a
+                  context where torch is already imported (joblib.load of an
+                  XGBoost model crashes on macOS if called after torch).
+    """
     seed = cfg["run"]["random_state"]
     s2 = cfg["stage2"]
     model_name = s2["model_name"]
-    max_length = s2["max_seq_length"]
     batch_size = s2["batch_size"]
     epochs = s2["epochs"]
     lr = s2["learning_rate"]
@@ -71,16 +79,21 @@ def train_stage2(cfg: dict) -> None:
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Reuse Stage 1's patient-level split ──
-    stage1_name = cfg["stage1"]["model"]
-    artifact_path = model_dir / f"stage1_{stage1_name}.joblib"
-    if not artifact_path.exists():
-        raise FileNotFoundError(
-            f"Stage 1 artifact not found at {artifact_path}. "
-            "Run `python -m src.model.train` first."
-        )
-    artifact = joblib.load(artifact_path)
+    if artifact is None:
+        stage1_name = cfg["stage1"]["model"]
+        artifact_path = model_dir / f"stage1_{stage1_name}.joblib"
+        if not artifact_path.exists():
+            raise FileNotFoundError(
+                f"Stage 1 artifact not found at {artifact_path}. "
+                "Run `python -m src.model.train` first."
+            )
+        artifact = joblib.load(artifact_path)
     train_idx, test_idx = artifact["train_idx"], artifact["test_idx"]
 
+    # Use the mode the Stage 1 model was trained on so train_idx / test_idx
+    # are valid positions in the reconstructed feature matrix.
+    mode = artifact["mode"]
+    max_length = s2["max_seq_length"]
     matrix = load_feature_matrix(cfg, mode)
     train_hadm_ids = set(matrix.iloc[train_idx]["hadm_id"].astype(int))
     test_hadm_ids = set(matrix.iloc[test_idx]["hadm_id"].astype(int))
@@ -93,6 +106,19 @@ def train_stage2(cfg: dict) -> None:
 
     train_df = notes_df[notes_df["hadm_id"].isin(train_hadm_ids)].reset_index(drop=True)
     test_df = notes_df[notes_df["hadm_id"].isin(test_hadm_ids)].reset_index(drop=True)
+
+    # Subsample training notes if cap is set. Stratified by label so class ratio is preserved.
+    # Fine-tuning on all 251k notes would take ~46 days on CPU; 15k ≈ 9 hours train + 3h eval.
+    max_train_notes = s2.get("max_train_notes", 0)
+    if max_train_notes and len(train_df) > max_train_notes:
+        _, train_df = train_test_split(
+            train_df, test_size=max_train_notes,
+            stratify=train_df[TARGET_COL], random_state=seed,
+        )
+        train_df = train_df.reset_index(drop=True)
+        print(f"[stage2/train] Subsampled to {len(train_df):,} training notes "
+              f"(stratified, readmission rate: {train_df[TARGET_COL].mean():.1%})")
+
     print(f"[stage2/train] Train: {len(train_df):,} notes | Test: {len(test_df):,} notes")
 
     # ── Tokenise ──
@@ -101,8 +127,22 @@ def train_stage2(cfg: dict) -> None:
 
     train_dataset = ClinicalNotesDataset(
         train_df["text"].tolist(), train_df[TARGET_COL].tolist(), tokenizer, max_length)
-    test_dataset = ClinicalNotesDataset(
-        test_df["text"].tolist(), test_df[TARGET_COL].tolist(), tokenizer, max_length)
+
+    # For checkpoint selection during training, cap the eval set so periodic evaluation
+    # (every epoch) doesn't dominate wall time. The full test set is used for final metrics.
+    max_eval_notes = s2.get("max_eval_notes", 0)
+    eval_df = test_df
+    if max_eval_notes and len(test_df) > max_eval_notes:
+        _, eval_df = train_test_split(
+            test_df, test_size=max_eval_notes,
+            stratify=test_df[TARGET_COL], random_state=seed,
+        )
+        eval_df = eval_df.reset_index(drop=True)
+        print(f"[stage2/train] Eval set capped to {len(eval_df):,} notes for checkpoint selection "
+              f"(full {len(test_df):,}-note test set used for final metrics)")
+
+    eval_dataset = ClinicalNotesDataset(
+        eval_df["text"].tolist(), eval_df[TARGET_COL].tolist(), tokenizer, max_length)
 
     # ── Model with class-weighted loss ──
     print(f"[stage2/train] Loading model from '{model_name}' ...")
@@ -155,7 +195,7 @@ def train_stage2(cfg: dict) -> None:
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=test_dataset,
+        eval_dataset=eval_dataset,   # capped for fast per-epoch checkpoint selection
         compute_metrics=_compute_metrics,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
     )
@@ -169,8 +209,9 @@ def train_stage2(cfg: dict) -> None:
     tokenizer.save_pretrained(str(save_path))
     print(f"[stage2/train] Saved fine-tuned model -> {save_path}")
 
-    # ── Final evaluation on test set ──
-    results = trainer.evaluate(test_dataset)
+    # ── Final evaluation (uses same capped eval set for consistency + speed) ──
+    # Full pipeline precision/recall is reported by predict_stage2, not here.
+    results = trainer.evaluate(eval_dataset)
     auprc = results.get("eval_auprc", float("nan"))
     auroc = results.get("eval_auroc", float("nan"))
     print(f"[stage2/train] Test AUPRC={auprc:.4f}  AUROC={auroc:.4f}")

@@ -19,14 +19,48 @@ Usage:
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
-from src.config import load_config, has_real_data
+# ── Step 1: load the Stage 1 artifact with joblib BEFORE torch is imported.
+# Importing torch first and then calling joblib.load() on a pickled XGBoost
+# model causes a C-extension conflict and segfaults on macOS.
+import joblib  # noqa: E402 — must come before torch
+from src.config import load_config, get_model_dir  # noqa: E402
+
+_cfg_early = load_config()
+_stage1_name = _cfg_early["stage1"]["model"]
+_artifact_path = get_model_dir() / f"stage1_{_stage1_name}.joblib"
+if not _artifact_path.exists():
+    print(f"[setup_stage2] ERROR: Stage 1 artifact not found at {_artifact_path}")
+    print("  Run setup_demo.py then python -m src.model.train first.")
+    sys.exit(1)
+_preloaded_artifact = joblib.load(_artifact_path)
+print(f"[setup_stage2] Pre-loaded Stage 1 artifact from {_artifact_path}")
+
+# ── Step 2: NOW set env vars and import torch / transformers.
+# Must be set before torch or transformers are imported — prevents MPS from
+# auto-initialising, which causes a segfault with Longformer on macOS.
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+# Pre-load all heavy libraries here so they are fully initialised before any
+# function call. Lazy imports inside functions trigger the segfault on macOS.
+import torch  # noqa: E402
+from transformers import (  # noqa: E402
+    AutoTokenizer,
+    LongformerForSequenceClassification,
+    Trainer,
+    TrainingArguments,
+    EarlyStoppingCallback,
+)
+from src.stage2.train import train_stage2      # noqa: E402
+from src.stage2.predict import predict_stage2  # noqa: E402
+
 
 
 def check_prerequisites(cfg: dict) -> None:
-    from src.config import get_model_dir
     model_dir = get_model_dir()
     stage1_name = cfg["stage1"]["model"]
     artifact = model_dir / f"stage1_{stage1_name}.joblib"
@@ -52,7 +86,7 @@ def main():
                         help="Override run.mode from config.yaml")
     args = parser.parse_args()
 
-    cfg = load_config()
+    cfg = _cfg_early  # already loaded at module level (before torch)
     if args.mode:
         cfg["run"]["mode"] = args.mode
 
@@ -62,6 +96,9 @@ def main():
     print(f"  Mode:  {cfg['run']['mode']}")
     print(f"  Model: {cfg['stage2']['model_name']}")
     print(f"  Max sequence length: {cfg['stage2']['max_seq_length']} tokens")
+    max_train = cfg['stage2'].get('max_train_notes', 0)
+    if max_train:
+        print(f"  Max training notes:  {max_train:,} (stratified subsample)")
     print()
 
     check_prerequisites(cfg)
@@ -69,21 +106,18 @@ def main():
     # ── Step 1: Fine-tune ──
     print("\n[1/2] Fine-tuning Clinical-Longformer on discharge notes...")
     print("      (model downloads automatically from HuggingFace on first run)\n")
-    from src.stage2.train import train_stage2
-    train_stage2(cfg)
+    # Pass the pre-loaded artifact so train_stage2 does NOT call joblib.load()
+    # after torch is in memory (which segfaults on macOS).
+    train_stage2(cfg, artifact=_preloaded_artifact)
 
     # ── Step 2: Predict ──
     print("\n[2/2] Scoring Stage 1 flagged patients with fine-tuned model...\n")
-    from src.stage2.predict import predict_stage2
-    results = predict_stage2(cfg)
+    results = predict_stage2(cfg, artifact=_preloaded_artifact)
 
     # ── Summary ──
     total = len(results)
     confirmed = int(results["stage2_confirmed"].sum())
     pruned = total - confirmed
-    true_pos = int(
-        (results["stage2_confirmed"] == 1) & (results["readmission_30d"] == 1)
-    ).sum() if "readmission_30d" in results.columns else "n/a"
 
     print("\n" + "=" * 64)
     print("  Stage 2 complete")
@@ -91,6 +125,9 @@ def main():
     print(f"  Stage 1 flagged:      {total:,}")
     print(f"  Stage 2 confirmed:    {confirmed:,}  ({confirmed / max(total, 1):.1%} retained)")
     print(f"  Stage 2 pruned:       {pruned:,}  ({pruned / max(total, 1):.1%} removed)")
+    if "readmission_30d" in results.columns:
+        true_pos = int(((results["stage2_confirmed"] == 1) & (results["readmission_30d"] == 1)).sum())
+        print(f"  True positives confirmed: {true_pos:,}")
     print(f"  Results saved to:     models/stage2_results.csv")
     print()
     print("  Next: python setup_stage3.py  (requires Ollama + phi4-mini)")
