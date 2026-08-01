@@ -1,5 +1,5 @@
 {
-  "_name_or_path": "models/clinical_longformer",
+  "_name_or_path": "yikuan8/Clinical-Longformer",
   "architectures": [
     "LongformerForSequenceClassification"
   ],
